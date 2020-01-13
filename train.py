@@ -161,7 +161,7 @@ print('batch size: ', BATCH_SIZE_TRAIN)
 history = model.fit_generator(train_gen_wrapper, validation_data=val_gen_wrapper,
                               epochs=NUM_EPOCHS, steps_per_epoch=len(train_gen_boneage),
                               validation_steps=len(valid_gen_boneage),
-                              callbacks=[early, reduceLROnPlat, checkpoint])
+                              callbacks=[early, reduceLROnPlat])
 
 model.save('saved_model.h5')
 
