@@ -135,8 +135,8 @@ checkpoint = ModelCheckpoint(weight_path, monitor='val_loss', verbose=1,
 early = EarlyStopping(monitor="val_loss", mode="min",
                       patience=10)
 
-# reduceLROnPlat = ReduceLROnPlateau(monitor='val_loss', factor=0.8, patience=15, verbose=1,
-#                                    save_best_only=True, mode='auto', epsilon=0.0001, cooldown=5)
+reduceLROnPlat = ReduceLROnPlateau(monitor='val_loss', factor=0.8, patience=15, verbose=1,
+                                   save_best_only=True, mode='auto', epsilon=0.0001, cooldown=5)
 
 
 def combined_generators(image_generator, gender_data, batch_size):
@@ -161,8 +161,8 @@ print('batch size: ', BATCH_SIZE_TRAIN)
 history = model.fit_generator(train_gen_wrapper, validation_data=val_gen_wrapper,
                               epochs=NUM_EPOCHS, steps_per_epoch=len(train_gen_boneage),
                               validation_steps=len(valid_gen_boneage),
-                            #   callbacks=[early, reduceLROnPlat])
-                            callbacks = [checkpoint])
+                            # callbacks = [early, reduceLROnPlat, checkpoint])
+                            callbacks = [early])
 
 model.save('saved_model.h5')
 
