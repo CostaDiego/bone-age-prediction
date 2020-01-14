@@ -130,8 +130,8 @@ model.summary()
 
 weight_path = "{}_weights.best.hdf5".format('bone_age')
 
-#checkpoint = ModelCheckpoint(weight_path, monitor='val_loss', verbose=1,
-#                             save_best_only=True, mode='min', save_best_only=True,)
+checkpoint = ModelCheckpoint(weight_path, monitor='val_loss', verbose=1,
+                            save_best_only=True, mode='min')
 
 early = EarlyStopping(monitor="val_loss", mode="min",
                       patience=10)
@@ -162,7 +162,7 @@ print('batch size: ', BATCH_SIZE_TRAIN)
 history = model.fit_generator(train_gen_wrapper, validation_data=val_gen_wrapper,
                               epochs=NUM_EPOCHS, steps_per_epoch=len(train_gen_boneage),
                               validation_steps=len(valid_gen_boneage),
-                              callbacks=[early, reduceLROnPlat])
+                              callbacks=[early, reduceLROnPlat, checkpoint])
 
 model.save('saved_model.h5')
 
