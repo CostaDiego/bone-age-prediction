@@ -15,7 +15,7 @@ def flow_from_dataframe(img_data_gen, in_df, path_col, y_col, **dflow_args):
     :return: df_gen (keras.preprocessing.image.DirectoryIterator)
     """
     print('flow_from_dataframe() -->')
-    base_dir = os.path.dirname(in_df[path_col].values[0])
+    base_dir = os.path.dirname(os.path.dirname(in_df[path_col].values[0]))
     print('## Ignore next message from keras, values are replaced anyways')
     # flow_from_directory: Takes the path to a directory, and generates batches of augmented/normalized data.
     # sparse: a 1D integer label array is returned

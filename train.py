@@ -71,10 +71,10 @@ class_str_col = 'boneage'
 gender_str_col = 'male'
 
 base_bone_dir = os.path.join('rsna-bone-age')
-boneage_df = pd.read_csv(os.path.join(base_bone_dir, 'boneage-training-dataset.csv'))
-boneage_df['path'] = boneage_df['id'].map(lambda x: os.path.join(base_bone_dir,
-                                                         'boneage-training-dataset', 
-                                                         'boneage-training-dataset', 
+boneage_df = pd.read_csv(os.path.join(base_bone_dir, 'boneage-train-dataset.csv'))
+boneage_df['path'] = boneage_df['fileName'].map(lambda x: os.path.join(base_bone_dir,
+                                                         'boneage-train-dataset', 
+                                                         'boneage-train-dataset', 
                                                          '{}.png'.format(x)))
 
 boneage_df['exists'] = boneage_df['path'].map(os.path.exists)
