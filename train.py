@@ -70,11 +70,12 @@ print('current time: %s' % str(datetime.now()))
 class_str_col = 'boneage'
 gender_str_col = 'male'
 
-base_bone_dir = os.path.join('../data')
-boneage_df = pd.read_csv(os.path.join(base_bone_dir, 'train.csv'))
-boneage_df['path'] = boneage_df['fileName'].map(lambda x: os.path.join(base_bone_dir,
-                                                         'images', 
-                                                         '{}'.format(x)))
+base_bone_dir = os.path.join('rsna-bone-age')
+boneage_df = pd.read_csv(os.path.join(base_bone_dir, 'boneage-training-dataset.csv'))
+boneage_df['path'] = boneage_df['id'].map(lambda x: os.path.join(base_bone_dir,
+                                                         'boneage-training-dataset', 
+                                                         'boneage-training-dataset', 
+                                                         '{}.png'.format(x)))
 
 boneage_df['exists'] = boneage_df['path'].map(os.path.exists)
 print(boneage_df['exists'].sum(), 'images found of', boneage_df.shape[0], 'total')
@@ -129,8 +130,8 @@ model.summary()
 
 weight_path = "{}_weights.best.hdf5".format('bone_age')
 
-checkpoint = ModelCheckpoint(weight_path, monitor='val_loss', verbose=1,
-                            save_best_only=True, mode='min')
+#checkpoint = ModelCheckpoint(weight_path, monitor='val_loss', verbose=1,
+#                             save_best_only=True, mode='min', save_best_only=True,)
 
 early = EarlyStopping(monitor="val_loss", mode="min",
                       patience=10)
@@ -161,8 +162,7 @@ print('batch size: ', BATCH_SIZE_TRAIN)
 history = model.fit_generator(train_gen_wrapper, validation_data=val_gen_wrapper,
                               epochs=NUM_EPOCHS, steps_per_epoch=len(train_gen_boneage),
                               validation_steps=len(valid_gen_boneage),
-                            # callbacks = [early, reduceLROnPlat, checkpoint])
-                            callbacks = [early])
+                              callbacks=[early, reduceLROnPlat])
 
 model.save('saved_model.h5')
 
