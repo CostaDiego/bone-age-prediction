@@ -23,10 +23,16 @@ from flow_dataframe import flow_from_dataframe
 tstart = datetime.now()
 
 # hyperparameters
-NUM_EPOCHS = 250
-LEARNING_RATE = 0.001
-BATCH_SIZE_TRAIN = 16
-BATCH_SIZE_VAL = 16
+
+# NUM_EPOCHS = 250
+# LEARNING_RATE = 0.001
+# BATCH_SIZE_TRAIN = 16
+# BATCH_SIZE_VAL = 16
+
+NUM_EPOCHS = 350
+LEARNING_RATE = 0.0001
+BATCH_SIZE_TRAIN = 8
+BATCH_SIZE_VAL = 8
 
 
 # default size of InceptionResNetV2
@@ -117,7 +123,10 @@ o = Dense(1000, activation='relu')(feature)
 o = Dense(1000, activation='relu')(o)
 o = Dense(1)(o)
 model = Model(inputs=[i1, i2], outputs=o)
-optimizer = Adam(lr=1e-3)
+
+# optimizer = Adam(lr=1e-3)
+optimizer = Adam(lr=1e-5)
+
 model.compile(loss='mean_absolute_error', optimizer=optimizer, metrics=['mae'])
 
 print('==================================================')
@@ -134,9 +143,9 @@ checkpoint = ModelCheckpoint(weight_path, monitor='val_loss', verbose=1,
                             save_best_only=True, mode='min')
 
 early = EarlyStopping(monitor="val_loss", mode="min",
-                      patience=10)
+                      patience=20)
 
-reduceLROnPlat = ReduceLROnPlateau(monitor='val_loss', factor=0.8, patience=15, verbose=1,
+reduceLROnPlat = ReduceLROnPlateau(monitor='val_loss', factor=0.4, patience=10, verbose=1,
                                    save_best_only=True, mode='auto', epsilon=0.0001, cooldown=5)
 
 
