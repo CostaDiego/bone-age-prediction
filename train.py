@@ -31,8 +31,8 @@ tstart = datetime.now()
 
 NUM_EPOCHS = 350
 LEARNING_RATE = 0.0001
-BATCH_SIZE_TRAIN = 8
-BATCH_SIZE_VAL = 8
+BATCH_SIZE_TRAIN = 12
+BATCH_SIZE_VAL = 32
 
 
 # default size of InceptionResNetV2
@@ -49,23 +49,23 @@ print('current time: %s' % str(datetime.now()))
 core_idg = ImageDataGenerator(zoom_range=0.2,
                               fill_mode='nearest',
                               featurewise_center=False,  # set input mean to 0 over the dataset
-                              samplewise_center=False,  # set each sample mean to 0
+                              samplewise_center=True,  # set each sample mean to 0
                               featurewise_std_normalization=False,  # divide inputs by std of the dataset
-                              samplewise_std_normalization=False,  # divide each input by its std
+                              samplewise_std_normalization=True,  # divide each input by its std
                               zca_whitening=False,  # apply ZCA whitening
                               rotation_range=25,  # randomly rotate images in the range (degrees, 0 to 180)
-                              width_shift_range=0.2,  # randomly shift images horizontally (fraction of total width)
-                              height_shift_range=0.2,  # randomly shift images vertically (fraction of total height)
+                              width_shift_range=0.25,  # randomly shift images horizontally (fraction of total width)
+                              height_shift_range=0.25,  # randomly shift images vertically (fraction of total height)
                               horizontal_flip=True,  # randomly flip images
                               vertical_flip=False)
 
 val_idg = ImageDataGenerator(width_shift_range=0.25, height_shift_range=0.25, horizontal_flip=True)
 
-print('==================================================')
-print('============ Creating Data Generators ============')
-print('==================================================')
+# print('==================================================')
+# print('============ Creating Data Generators ============')
+# print('==================================================')
 
-print('current time: %s' % str(datetime.now()))
+# print('current time: %s' % str(datetime.now()))
 
 print('==================================================')
 print('========== Reading RSNA Boneage Dataset ==========')
@@ -81,20 +81,22 @@ boneage_df = pd.read_csv(os.path.join(base_bone_dir, 'boneage-train-dataset.csv'
 boneage_df['path'] = boneage_df['fileName'].map(lambda x: os.path.join(base_bone_dir,
                                                          'boneage-train-dataset', 
                                                          'boneage-train-dataset', 
-                                                         '{}.png'.format(x)))
+                                                         '{}'.format(x)))
 
 boneage_df['exists'] = boneage_df['path'].map(os.path.exists)
 print(boneage_df['exists'].sum(), 'images found of', boneage_df.shape[0], 'total')
 
 boneage_df[gender_str_col] = boneage_df[gender_str_col].map(lambda x: np.array([1]) if x else np.array([0])) # map boolean values to 1 and 0
 
-train_df_boneage, valid_df_boneage = train_test_split(boneage_df, test_size=0.2,
-                                                      random_state=2018)  # ,stratify=boneage_df['boneage_category'])
+train_df_boneage, valid_df_boneage = train_test_split(boneage_df, test_size=0.3,
+                                                      random_state= None)
+# ,stratify=boneage_df['boneage_category'])
 print('train', train_df_boneage.shape[0], 'validation', valid_df_boneage.shape[0])
 
 train_gen_boneage = flow_from_dataframe(core_idg, train_df_boneage, path_col='path', y_col=class_str_col,
                                         target_size=IMG_SIZE,
-                                        color_mode='rgb', batch_size=BATCH_SIZE_TRAIN)
+                                        color_mode='rgb',
+                                        batch_size=BATCH_SIZE_TRAIN)
 
 # used a fixed dataset for evaluating the algorithm
 valid_gen_boneage = flow_from_dataframe(core_idg, valid_df_boneage, path_col='path', y_col=class_str_col,
@@ -110,7 +112,9 @@ print('current time: %s' % str(datetime.now()))
 
 i1 = Input(shape=(299, 299, 3), name='input_img')
 i2 = Input(shape=(1,), name='input_gender')
-base = InceptionV3(input_tensor=i1, input_shape=(299, 299, 3), include_top=False, weights=None)
+# base = InceptionV3(input_tensor=i1, input_shape=(299, 299, 3), include_top=False, weights=None)
+base = InceptionV3(input_tensor=i1, input_shape=(299, 299, 3), include_top=False, weights="imagenet")
+
 
 feature_img = base.get_layer(name='mixed10').output
 feature_img = AveragePooling2D((2, 2))(feature_img)
@@ -135,7 +139,7 @@ print('==================================================')
 
 print('current time: %s' % str(datetime.now()))
 
-model.summary()
+# model.summary()
 
 weight_path = "{}_weights.best.hdf5".format('bone_age')
 
@@ -145,7 +149,7 @@ checkpoint = ModelCheckpoint(weight_path, monitor='val_loss', verbose=1,
 early = EarlyStopping(monitor="val_loss", mode="min",
                       patience=20)
 
-reduceLROnPlat = ReduceLROnPlateau(monitor='val_loss', factor=0.4, patience=10, verbose=1,
+reduceLROnPlat = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=10, verbose=1,
                                    save_best_only=True, mode='auto', epsilon=0.0001, cooldown=5)
 
 
