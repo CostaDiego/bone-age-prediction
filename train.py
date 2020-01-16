@@ -9,7 +9,8 @@ from itertools import cycle
 
 from keras import Input
 from keras.applications import InceptionV3
-from keras.applications.inception_resnet_v2 import InceptionResNetV2, preprocess_input
+# from keras.applications.inception_resnet_v2 import InceptionResNetV2, preprocess_input
+from keras.applications.nasnet import NASNetMobile, preprocess_input
 from keras.layers import Dense, Flatten, Dropout, AveragePooling2D, concatenate
 from keras.preprocessing.image import ImageDataGenerator
 from sklearn.model_selection import train_test_split
@@ -31,12 +32,13 @@ tstart = datetime.now()
 
 NUM_EPOCHS = 350
 LEARNING_RATE = 0.0001
-BATCH_SIZE_TRAIN = 12
-BATCH_SIZE_VAL = 32
+BATCH_SIZE_TRAIN = 8
+BATCH_SIZE_VAL = 16
 
 
-# default size of InceptionResNetV2
-IMG_SIZE = (299, 299)
+# default size of InceptionResNetV2 and NASNet
+# IMG_SIZE = (299, 299)
+IMG_SIZE = (224, 224)
 
 print('==================================================')
 print('============ Preprocessing Image Data ============')
@@ -46,20 +48,31 @@ print('current time: %s' % str(datetime.now()))
 
 # Generate batches of tensor image data with real-time data augmentation. The data will be looped over (in batches).
 
-core_idg = ImageDataGenerator(zoom_range=0.2,
-                              fill_mode='nearest',
-                              featurewise_center=False,  # set input mean to 0 over the dataset
-                              samplewise_center=True,  # set each sample mean to 0
-                              featurewise_std_normalization=False,  # divide inputs by std of the dataset
-                              samplewise_std_normalization=True,  # divide each input by its std
-                              zca_whitening=False,  # apply ZCA whitening
-                              rotation_range=25,  # randomly rotate images in the range (degrees, 0 to 180)
-                              width_shift_range=0.25,  # randomly shift images horizontally (fraction of total width)
-                              height_shift_range=0.25,  # randomly shift images vertically (fraction of total height)
-                              horizontal_flip=True,  # randomly flip images
-                              vertical_flip=False)
+# core_idg = ImageDataGenerator(zoom_range=0.2,
+#                               fill_mode='nearest',
+#                               featurewise_center=False,  # set input mean to 0 over the dataset
+#                               samplewise_center=True,  # set each sample mean to 0
+#                               featurewise_std_normalization=False,  # divide inputs by std of the dataset
+#                               samplewise_std_normalization=True,  # divide each input by its std
+#                               zca_whitening=False,  # apply ZCA whitening
+#                               rotation_range=25,  # randomly rotate images in the range (degrees, 0 to 180)
+#                               width_shift_range=0.25,  # randomly shift images horizontally (fraction of total width)
+#                               height_shift_range=0.25,  # randomly shift images vertically (fraction of total height)
+#                               horizontal_flip=True,  # randomly flip images
+#                               vertical_flip=False)
 
-val_idg = ImageDataGenerator(width_shift_range=0.25, height_shift_range=0.25, horizontal_flip=True)
+core_idg = ImageDataGenerator(#rescale=1.0/255,
+                              zoom_range=0.2,
+                              width_shift_range=0.25,
+                              height_shift_range=0.25,
+                              fill_mode='nearest',
+                              rotation_range=25,
+                              horizontal_flip=True,
+                              preprocessing_function=preprocess_input
+                              )
+val_idg = ImageDataGenerator(#rescale=1.0/255#,
+                            preprocessing_function=preprocess_input
+                            )
 
 # print('==================================================')
 # print('============ Creating Data Generators ============')
@@ -102,7 +115,7 @@ train_gen_boneage = flow_from_dataframe(core_idg, train_df_boneage, path_col='pa
 valid_gen_boneage = flow_from_dataframe(core_idg, valid_df_boneage, path_col='path', y_col=class_str_col,
                                         target_size=IMG_SIZE,
                                         color_mode='rgb',
-                                        batch_size=BATCH_SIZE_VAL)  # we can use much larger batches for evaluation
+                                        batch_size=BATCH_SIZE_VAL)
 
 print('==================================================')
 print('================= Building Model =================')
@@ -110,13 +123,16 @@ print('==================================================')
 
 print('current time: %s' % str(datetime.now()))
 
-i1 = Input(shape=(299, 299, 3), name='input_img')
+# i1 = Input(shape=(299, 299, 3), name='input_img')
+i1 = Input(shape=(224, 224, 3), name='input_img')
 i2 = Input(shape=(1,), name='input_gender')
 # base = InceptionV3(input_tensor=i1, input_shape=(299, 299, 3), include_top=False, weights=None)
-base = InceptionV3(input_tensor=i1, input_shape=(299, 299, 3), include_top=False, weights="imagenet")
+# base = InceptionV3(input_tensor=i1, input_shape=(224, 224, 3), include_top=False, weights="imagenet")
+base = NASNetMobile(input_tensor=i1, input_shape=(224, 224, 3), include_top=False, weights='imagenet')
 
 
-feature_img = base.get_layer(name='mixed10').output
+
+feature_img = base.get_layer(index=-1).output
 feature_img = AveragePooling2D((2, 2))(feature_img)
 feature_img = Flatten()(feature_img)
 feature_gender = Dense(32, activation='relu')(i2)
@@ -139,7 +155,7 @@ print('==================================================')
 
 print('current time: %s' % str(datetime.now()))
 
-# model.summary()
+model.summary()
 
 weight_path = "{}_weights.best.hdf5".format('bone_age')
 
@@ -170,6 +186,7 @@ def batch(iterable, n=1):
 
 train_gen_wrapper = combined_generators(train_gen_boneage, train_df_boneage[gender_str_col], BATCH_SIZE_TRAIN)
 val_gen_wrapper = combined_generators(valid_gen_boneage, valid_df_boneage[gender_str_col], BATCH_SIZE_VAL)
+
 print('batch size: ', BATCH_SIZE_TRAIN)
 
 history = model.fit_generator(train_gen_wrapper, validation_data=val_gen_wrapper,
@@ -181,7 +198,7 @@ model.save('saved_model.h5')
 
 print('Model Saved ! :) \n')
 
-print('Boneage dataset (final): val_mean_absolute_error: ', history.history['val_mean_absolute_error'][-1])
+print('Boneage dataset (final): val_mean_absolute_error: ', history.history['val_mae'][-1])
 
 print('==================================================')
 print('================ Evaluating Model ================')
