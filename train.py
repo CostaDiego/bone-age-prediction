@@ -125,7 +125,7 @@ print('current time: %s' % str(datetime.now()))
 
 # i1 = Input(shape=(299, 299, 3), name='input_img')
 i1 = Input(shape=(224, 224, 3), name='input_img')
-i2 = Input(shape=(1,), name='input_gender')
+# i2 = Input(shape=(1,), name='input_gender')
 # base = InceptionV3(input_tensor=i1, input_shape=(299, 299, 3), include_top=False, weights=None)
 # base = InceptionV3(input_tensor=i1, input_shape=(224, 224, 3), include_top=False, weights="imagenet")
 base = NASNetMobile(input_tensor=i1, input_shape=(224, 224, 3), include_top=False, weights='imagenet')
@@ -133,16 +133,18 @@ base = NASNetMobile(input_tensor=i1, input_shape=(224, 224, 3), include_top=Fals
 
 
 feature_img = base.get_layer(index=-1).output
-feature_img = AveragePooling2D((2, 2))(feature_img)
+# feature_img = AveragePooling2D((2, 2))(feature_img)
 feature_img = Flatten()(feature_img)
-feature_gender = Dense(32, activation='relu')(i2)
-feature = concatenate([feature_img, feature_gender], axis=1)
+# feature_gender = Dense(32, activation='relu')(i2)
+# feature = concatenate([feature_img, feature_gender], axis=1)
 
 # feature = feature_img
-o = Dense(1000, activation='relu')(feature)
-o = Dense(1000, activation='relu')(o)
+# o = Dense(1000, activation='relu')(feature)
+o = Dense(1000, activation='relu')(feature_img)
+# o = Dense(1000, activation='relu')(o)
 o = Dense(1)(o)
-model = Model(inputs=[i1, i2], outputs=o)
+# model = Model(inputs=[i1, i2], outputs=o)
+model = Model(inputs=i1, outputs=o)
 
 # optimizer = Adam(lr=1e-3)
 optimizer = Adam(lr=1e-5)
@@ -184,12 +186,17 @@ def batch(iterable, n=1):
         yield iterable[ndx:min(ndx + n, l)]
 
 
-train_gen_wrapper = combined_generators(train_gen_boneage, train_df_boneage[gender_str_col], BATCH_SIZE_TRAIN)
-val_gen_wrapper = combined_generators(valid_gen_boneage, valid_df_boneage[gender_str_col], BATCH_SIZE_VAL)
+# train_gen_wrapper = combined_generators(train_gen_boneage, train_df_boneage[gender_str_col], BATCH_SIZE_TRAIN)
+# val_gen_wrapper = combined_generators(valid_gen_boneage, valid_df_boneage[gender_str_col], BATCH_SIZE_VAL)
 
 print('batch size: ', BATCH_SIZE_TRAIN)
 
-history = model.fit_generator(train_gen_wrapper, validation_data=val_gen_wrapper,
+# history = model.fit_generator(train_gen_wrapper, validation_data=val_gen_wrapper,
+#                               epochs=NUM_EPOCHS, steps_per_epoch=len(train_gen_boneage),
+#                               validation_steps=len(valid_gen_boneage),
+#                               callbacks=[early, reduceLROnPlat, checkpoint])
+
+history = model.fit_generator(train_gen_boneage, validation_data=valid_gen_boneage,
                               epochs=NUM_EPOCHS, steps_per_epoch=len(train_gen_boneage),
                               validation_steps=len(valid_gen_boneage),
                               callbacks=[early, reduceLROnPlat, checkpoint])
