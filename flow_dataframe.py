@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import os
 
-def flow_from_dataframe(img_data_gen, in_df, path_col, y_col = None, **dflow_args):
+def flow_from_dataframe(img_data_gen, in_df, path_col, y_col = None,**dflow_args):
     """
     Creates a DirectoryIterator from in_df at path_col with image preprocessing defined by img_data_gen. The labels
     are specified by y_col.

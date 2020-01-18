@@ -11,7 +11,7 @@ from keras import Input
 from keras.applications import InceptionV3
 # from keras.applications.inception_resnet_v2 import InceptionResNetV2, preprocess_input
 from keras.applications.nasnet import NASNetMobile, preprocess_input
-from keras.layers import Dense, Flatten, Dropout, AveragePooling2D, concatenate
+from keras.layers import Dense, Flatten, Dropout, AveragePooling2D, concatenate, GlobalAveragePooling2D
 from keras.preprocessing.image import ImageDataGenerator
 from sklearn.model_selection import train_test_split
 from keras.models import Model, Sequential
@@ -32,8 +32,8 @@ tstart = datetime.now()
 
 NUM_EPOCHS = 350
 LEARNING_RATE = 0.0001
-BATCH_SIZE_TRAIN = 8
-BATCH_SIZE_VAL = 16
+BATCH_SIZE_TRAIN = 36
+BATCH_SIZE_VAL = 36
 
 
 # default size of InceptionResNetV2 and NASNet
@@ -62,13 +62,13 @@ print('current time: %s' % str(datetime.now()))
 #                               vertical_flip=False)
 
 core_idg = ImageDataGenerator(#rescale=1.0/255,
-                              zoom_range=0.2,
-                              width_shift_range=0.25,
-                              height_shift_range=0.25,
+                              zoom_range=0.10,
+                              width_shift_range=0.10,
+                              height_shift_range=0.10,
                               fill_mode='nearest',
                               rotation_range=25,
                               horizontal_flip=True,
-                              preprocessing_function=preprocess_input
+#                               preprocessing_function=preprocess_input
                               )
 val_idg = ImageDataGenerator(#rescale=1.0/255#,
                             preprocessing_function=preprocess_input
@@ -134,14 +134,15 @@ base = NASNetMobile(input_tensor=i1, input_shape=(224, 224, 3), include_top=Fals
 
 feature_img = base.get_layer(index=-1).output
 # feature_img = AveragePooling2D((2, 2))(feature_img)
-feature_img = Flatten()(feature_img)
+feature_img = GlobalAveragePooling2D()(feature_img)
+# feature_img = Flatten()(feature_img)
 # feature_gender = Dense(32, activation='relu')(i2)
 # feature = concatenate([feature_img, feature_gender], axis=1)
 
 # feature = feature_img
 # o = Dense(1000, activation='relu')(feature)
 o = Dense(1000, activation='relu')(feature_img)
-# o = Dense(1000, activation='relu')(o)
+o = Dense(1000, activation='relu')(o)
 o = Dense(1)(o)
 # model = Model(inputs=[i1, i2], outputs=o)
 model = Model(inputs=i1, outputs=o)
